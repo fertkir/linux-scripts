@@ -1,0 +1,21 @@
+#!/bin/bash
+# TODO need to check that stoken-cli & xclip are installed
+# TODO Ctrl+C doesn't cancel when password is asked
+
+pin=$(secret-tool lookup securid pin)
+
+if [ -z "$pin" ]; then
+  set -e
+  echo "Token isn't set up. Setting up."
+  secret-tool store --label='RSA SecurID PIN' securid pin
+  pin=$(secret-tool lookup securid pin)
+  echo "Enter token url: "
+  read token_url
+  printf "$pin\n$pin\n" | stoken import --token "$token_url" --force
+  echo
+fi
+
+token=$(stoken --password=$pin)
+
+echo "$pin$token" | xclip -selection clipboard
+echo "PinToken copied to clipboard. Current token value: $token"

@@ -1,0 +1,58 @@
+#!/bin/bash
+
+args_num=$#
+
+if [ "$args_num" -eq 0 ]; then
+	echo "Usage example:"
+	echo "embed-srt ../House\ of\ Cards/Season\ 01/*.avi ../House\ of\ Cards/Season\ 01/Subtitles/*.ENG.srt"
+	exit 1
+fi
+
+echo "The following videos and subtitles will be merged:"
+echo
+
+half_args_num=$((args_num / 2))
+for i in $(seq 1 $half_args_num);
+do
+	input1=${@:$i:1}
+	input2=${@:$((i + half_args_num)):1}
+
+	if [[ "$input1" != *".avi" ]] && [[ "$input1" != *".mkv" ]]; then
+		echo "Unknown video file extension: $input1"
+		exit 1
+	fi
+	if [[ "$input2" != *".srt" ]]; then
+		echo "Unknown subtitle file extension: $input2"
+		exit 1
+	fi
+	echo "      $input1"
+	echo "      $input2"
+	echo
+done
+
+read -p "Are you sure (y/n)? " -n 1 -r
+echo # moving to a new line
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+	exit 1
+fi
+
+for i in $(seq 1 $half_args_num);
+do
+	input1=${@:$i:1}
+	input2=${@:$((i + half_args_num)):1}
+
+	video_file_path=$input1
+	if [[ "$video_file_path" == *".avi" ]]; then
+		video_file_path=${video_file_path/.avi/".mkv"}
+		ffmpeg -fflags +genpts -i "$input1" -map 0 -c copy "$video_file_path"
+		# ffmpeg -fflags +genpts -i "$input1" -map v:0 -map a:1 -c copy "$video_file_path" # copying only second audio track
+	fi
+
+	mkvmerge -o "$(basename -- "${video_file_path/.mkv/"-with-srt.mkv"}")" "$video_file_path" "$input2"
+
+	if [[ "$input1" == *".avi"* ]]; then
+		# cleaning up intermediary files
+		rm "$video_file_path"
+	fi
+done
