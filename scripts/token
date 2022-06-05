@@ -1,5 +1,5 @@
 #!/bin/bash
-# TODO need to check that stoken-cli & xclip are installed
+# TODO need to check that stoken-cli, xclip and secret-tool are installed
 # TODO Ctrl+C doesn't cancel when password is asked
 
 pin=$(secret-tool lookup securid pin)
